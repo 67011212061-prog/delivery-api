@@ -1,0 +1,87 @@
+<main class="page">
+  <h1>ระบบจัดการรายการสั่งซื้อ</h1>
+  <p class="sub">ข้าวกล่องเดลิเวอรี่ส่งด่วนมื้อเที่ยง</p>
+
+  <section class="card">
+    <h2>จัดการออร์เดอร์</h2>
+    <div class="toolbar">
+      <button class="btn primary" (click)="simulate()" [disabled]="loading()">
+        จำลองออร์เดอร์ 20-30 รายการ
+      </button>
+      <button class="btn" (click)="loadOrders()" [disabled]="loading()">แสดงทั้งหมด</button>
+      <button class="btn danger" (click)="clearAll()" [disabled]="loading()">
+        ล้างออร์เดอร์ทั้งหมด
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>ค้นหาออร์เดอร์ตามระยะทาง</h2>
+    <div class="toolbar">
+      <label>lat <input type="number" step="any" [(ngModel)]="lat" /></label>
+      <label>lng <input type="number" step="any" [(ngModel)]="lng" /></label>
+      <label>รัศมี (กม.) <input type="number" step="any" [(ngModel)]="radius" /></label>
+      <button class="btn primary" (click)="searchNearby()" [disabled]="loading()">ค้นหา</button>
+    </div>
+  </section>
+
+  @if (message()) {
+    <div class="msg" [class.error]="isError()">{{ message() }}</div>
+  }
+
+  <section class="card">
+    <div class="summary">
+      <span>{{ nearbyMode() ? 'ผลการค้นหาตามระยะ' : 'ออร์เดอร์ทั้งหมด' }}</span>
+      <span><b>{{ orders().length }}</b> รายการ | กล่องรวม <b>{{ totalBoxes() }}</b> กล่อง</span>
+    </div>
+
+    @if (loading()) {
+      <p class="empty">กำลังโหลด...</p>
+    } @else if (orders().length === 0) {
+      <p class="empty">ยังไม่มีออร์เดอร์ กดปุ่ม "จำลองออร์เดอร์" เพื่อสร้างข้อมูลทดสอบ</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ลูกค้า</th>
+              <th>พิกัด</th>
+              <th>สั่งเมื่อ</th>
+              <th>ส่งถึงภายใน</th>
+              <th>จำนวนกล่อง</th>
+              @if (nearbyMode()) {
+                <th>ระยะ (กม.)</th>
+              }
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of orders(); track o.order_id) {
+              <tr>
+                <td>{{ o.order_id }}</td>
+                <td>{{ o.first_name }} {{ o.last_name }}</td>
+                <td>{{ o.lat }}, {{ o.lng }}</td>
+                <td>{{ o.order_date | date: 'dd/MM HH:mm' }}</td>
+                <td>{{ o.deadline }}</td>
+                <td>
+                  <div class="stepper">
+                    <button (click)="changeBox(o, -1)" [disabled]="o.box_count <= 1">-</button>
+                    <span>{{ o.box_count }}</span>
+                    <button (click)="changeBox(o, 1)" [disabled]="o.box_count >= 3">+</button>
+                  </div>
+                </td>
+                @if (nearbyMode()) {
+                  <td>{{ o.distance_km }}</td>
+                }
+                <td>
+                  <button class="btn danger small" (click)="deleteOrder(o)">ลบ</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>
