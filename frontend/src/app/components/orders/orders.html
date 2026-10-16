@@ -1,80 +1,60 @@
-<div class="flex items-end justify-between mb-6">
-  <div>
-    <p class="text-[11px] font-bold text-[#a85d41] uppercase tracking-wider mb-1">รายการทั้งหมด</p>
-    <h1 class="text-2xl font-bold m-0 text-[#242820]">จัดการออร์เดอร์</h1>
-    <p class="text-xs text-[#85877d] mt-1 mb-0">ติดตามและจัดการคำสั่งซื้อของลูกค้า</p>
-  </div>
-  <div class="flex gap-2">
-    <button class="px-3 py-1.5 border border-[#dcdad1] bg-white text-[#4d554b] text-xs font-semibold rounded hover:bg-[#f0efe8] cursor-pointer" [disabled]="saving() || !customers().length" (click)="simulate.emit()">
-      ✦ สร้างตัวอย่าง
-    </button>
-    <button class="px-4 py-2 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer border-0" [disabled]="!customers().length" (click)="createOrder.emit()">
-      <span class="text-base leading-none">+</span> สร้างออร์เดอร์
-    </button>
-  </div>
-</div>
-
-<section class="bg-white border border-[#e6e4dc] rounded-lg overflow-hidden">
-  <div class="p-3 border-b border-[#eceae3] flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <strong class="text-xs text-[#3c4138]">ออร์เดอร์ทั้งหมด</strong>
-      <span class="bg-[#f0efe9] text-[#77796f] text-[10px] px-2 py-0.5 rounded">{{ filteredOrders().length }} รายการ</span>
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">รายการออร์เดอร์</h2>
+      <p class="text-sm text-gray-500">จัดการรายการสั่งซื้อทั้งหมดในระบบ</p>
     </div>
-    <div class="flex items-center gap-2">
-      <div class="flex items-center border border-[#e3e1d8] rounded px-2.5 py-1 bg-white">
-        <span class="text-xs text-stone-400 mr-2">⌕</span>
-        <input type="search" placeholder="ค้นหาออร์เดอร์หรือลูกค้า..." class="text-xs border-0 outline-none w-48" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
-      </div>
-      <button class="px-3 py-1 border border-red-200 text-red-600 rounded text-xs hover:bg-red-50 cursor-pointer bg-transparent" [disabled]="!orders().length" (click)="clear.emit()">ล้างทั้งหมด</button>
+    <div class="flex items-center gap-3">
+      <button 
+        (click)="createOrder.emit()" 
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        สร้างออร์เดอร์
+      </button>
     </div>
   </div>
 
-  @if (loading()) {
-    <div class="p-12 text-center text-xs text-[#85877d]">กำลังโหลดข้อมูล...</div>
-  } @else if (filteredOrders().length === 0) {
-    <div class="p-12 text-center text-xs text-[#85877d]">{{ searchQuery() ? 'ไม่พบออร์เดอร์ที่ค้นหา' : 'ยังไม่มีออร์เดอร์ในระบบ' }}</div>
-  } @else {
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse text-xs">
-        <thead>
-          <tr class="bg-[#f8f7f1] text-[#85877d] border-b border-[#eeece5]">
-            <th class="p-3 font-semibold">ออร์เดอร์</th>
-            <th class="p-3 font-semibold">ลูกค้า</th>
-            <th class="p-3 font-semibold">วันที่สั่งซื้อ</th>
-            <th class="p-3 font-semibold">กำหนดส่ง</th>
-            <th class="p-3 font-semibold">จำนวน</th>
-            <th class="p-3 font-semibold">สถานะ</th>
-            <th class="p-3 font-semibold text-right">จัดการ</th>
+      <table class="w-full text-left text-sm text-gray-600">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-400 font-semibold border-b border-gray-100">
+          <tr>
+            <th class="px-6 py-3">รหัส</th>
+            <th class="px-6 py-3">ลูกค้า</th>
+            <th class="px-6 py-3">จำนวนกล่อง</th>
+            <th class="px-6 py-3">สถานะ</th>
+            <th class="px-6 py-3 text-right">จัดการ</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-[#eeece5]">
-          @for (order of filteredOrders(); track order.order_id) {
-            <tr class="hover:bg-[#fbfaf6]">
-              <td class="p-3 font-bold text-[#4b5147]">#{{ order.order_id }}</td>
-              <td class="p-3">
-                <div class="font-semibold text-[#373c33]">{{ customerName(order) }}</div>
-                <div class="text-[11px] text-[#96978d]">{{ order.phone || 'ไม่ระบุเบอร์โทร' }}</div>
-              </td>
-              <td class="p-3">
-                {{ formatDate(order.order_date) }}
-                <span class="text-[11px] text-[#96978d] ml-1">{{ formatTime(order.order_date) }}</span>
-              </td>
-              <td class="p-3">{{ order.deadline?.slice(0, 5) || '12:30' }} น.</td>
-              <td class="p-3"><span class="px-2 py-0.5 rounded bg-[#f0efe9] text-[11px]">{{ order.box_count }} กล่อง</span></td>
-              <td class="p-3">
-                <span class="px-2 py-0.5 rounded text-[11px] font-semibold"
-                  [ngClass]="order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
-                  {{ order.status === 'pending' ? 'รอดำเนินการ' : order.status }}
+        <tbody class="divide-y divide-gray-100">
+          @for (order of orders(); track order.order_id) {
+            <tr class="hover:bg-gray-50/50 transition">
+              <td class="px-6 py-4 font-medium text-gray-900">#{{ order.order_id }}</td>
+              <td class="px-6 py-4">{{ order.first_name }} {{ order.last_name }}</td>
+              <td class="px-6 py-4">{{ order.box_count }} กล่อง</td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-yellow-100 text-yellow-800': order.status === 'pending',
+                    'bg-green-100 text-green-800': order.status === 'delivered'
+                  }">
+                  {{ order.status === 'pending' ? 'รอดำเนินการ' : 'จัดส่งแล้ว' }}
                 </span>
               </td>
-              <td class="p-3 text-right">
-                <button class="px-2 py-1 border border-stone-200 rounded hover:bg-stone-100 cursor-pointer mr-1" (click)="onEdit.emit(order)">✎</button>
-                <button class="px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50 cursor-pointer" (click)="onDelete.emit(order)">×</button>
+              <td class="px-6 py-4 text-right space-x-2">
+                <button (click)="onEdit.emit(order)" class="text-blue-600 hover:text-blue-800 font-medium">แก้ไข</button>
+                <button (click)="onDelete.emit(order)" class="text-red-500 hover:text-red-700 font-medium">ลบ</button>
               </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-gray-400">ยังไม่มีข้อมูลออร์เดอร์</td>
             </tr>
           }
         </tbody>
       </table>
     </div>
-  }
-</section>
+  </div>
+</div>
