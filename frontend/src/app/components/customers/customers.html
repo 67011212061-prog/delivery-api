@@ -1,0 +1,62 @@
+<div class="flex items-end justify-between mb-6">
+  <div>
+    <p class="text-[11px] font-bold text-[#a85d41] uppercase tracking-wider mb-1">สมุดรายชื่อ</p>
+    <h1 class="text-2xl font-bold m-0 text-[#242820]">จัดการลูกค้า</h1>
+    <p class="text-xs text-[#85877d] mt-1 mb-0">ดูแลข้อมูลลูกค้าและตำแหน่งสำหรับจัดส่ง</p>
+  </div>
+  <button (click)="createCustomer.emit()" class="px-4 py-2 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer border-0">
+    <span class="text-base leading-none">+</span> เพิ่มลูกค้า
+  </button>
+</div>
+
+<section class="bg-white border border-[#e6e4dc] rounded-lg overflow-hidden">
+  <div class="p-3 border-b border-[#eceae3] flex justify-between items-center">
+    <div class="flex items-center gap-2">
+      <strong class="text-xs text-[#3c4138]">ลูกค้าทั้งหมด</strong>
+      <span class="bg-[#f0efe9] text-[#77796f] text-[10px] px-2 py-0.5 rounded">{{ filteredCustomers().length }} ราย</span>
+    </div>
+    <div class="flex items-center border border-[#e3e1d8] rounded px-2.5 py-1 bg-white">
+      <span class="text-xs text-stone-400 mr-2">⌕</span>
+      <input type="search" placeholder="ค้นหาชื่อ เบอร์โทร หรือที่อยู่..." class="text-xs border-0 outline-none w-56" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="p-12 text-center text-xs text-[#85877d]">กำลังโหลดข้อมูล...</div>
+  } @else if (filteredCustomers().length === 0) {
+    <div class="p-12 text-center text-xs text-[#85877d]">{{ searchQuery() ? 'ไม่พบลูกค้าที่ค้นหา' : 'ยังไม่มีข้อมูลลูกค้า' }}</div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-[#f8f7f1] text-[#85877d] border-b border-[#eeece5]">
+            <th class="p-3 font-semibold">ชื่อลูกค้า</th>
+            <th class="p-3 font-semibold">เบอร์โทรศัพท์</th>
+            <th class="p-3 font-semibold">ที่อยู่ / หมายเหตุ</th>
+            <th class="p-3 font-semibold">พิกัดจัดส่ง</th>
+            <th class="p-3 font-semibold">ออร์เดอร์</th>
+            <th class="p-3 font-semibold text-right">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#eeece5]">
+          @for (customer of filteredCustomers(); track customer.customer_id) {
+            <tr class="hover:bg-[#fbfaf6]">
+              <td class="p-3">
+                <div class="font-semibold text-[#373c33]">{{ customer.first_name }} {{ customer.last_name }}</div>
+                <div class="text-[11px] text-[#96978d]">รหัสลูกค้า #{{ customer.customer_id }}</div>
+              </td>
+              <td class="p-3">{{ customer.phone || '—' }}</td>
+              <td class="p-3 max-w-xs truncate">{{ customer.address_note || 'ไม่ระบุที่อยู่' }}</td>
+              <td class="p-3 text-[#72776c] font-mono text-[11px]">{{ customer.lat }}, {{ customer.lng }}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded bg-[#f0efe9] text-[11px]">{{ customerOrderCount(customer.customer_id) }} รายการ</span></td>
+              <td class="p-3 text-right">
+                <button class="px-2 py-1 border border-stone-200 rounded hover:bg-stone-100 cursor-pointer mr-1" (click)="onEdit.emit(customer)">✎</button>
+                <button class="px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50 cursor-pointer" (click)="onDelete.emit(customer)">×</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

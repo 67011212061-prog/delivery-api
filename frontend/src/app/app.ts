@@ -1,368 +1,283 @@
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { ApiService, Customer, Order } from './api.service';
 
-type Page = 'overview' | 'orders' | 'customers';
+// Import ให้ตรงกับชื่อไฟล์จริงที่ Angular CLI สร้าง (ไม่มี .component)
+import { OverviewComponent } from './components/overview/overview';
+import { OrdersComponent } from './components/orders/orders';
+import { CustomersComponent } from './components/customers/customers';
+import { ApiService } from './api.service';
+
+export interface Customer {
+  customer_id: number;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  address_note?: string;
+  lat: number;
+  lng: number;
+}
+
+export interface Order {
+  order_id: number;
+  customer_id: number;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  box_count: number;
+  status: string;
+  order_date: string;
+  deadline?: string;
+}
 
 @Component({
-  imports: [CommonModule, FormsModule],
   selector: 'app-root',
-  styleUrl: './app.css',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    OverviewComponent,
+    OrdersComponent,
+    CustomersComponent
+  ],
   templateUrl: './app.html',
+  styleUrl: './app.css'
 })
 export class App implements OnInit {
-  private readonly api = inject(ApiService);
+  private api = inject(ApiService);
 
-  protected readonly page = signal<Page>('overview');
-  protected readonly customers = signal<Customer[]>([]);
-  protected readonly orders = signal<Order[]>([]);
-  protected readonly loading = signal(true);
-  protected readonly dataLoaded = signal(false);
-  protected readonly apiConnected = signal(false);
-  protected readonly saving = signal(false);
-  protected readonly error = signal('');
-  protected readonly notice = signal('');
-  protected readonly query = signal('');
-  protected readonly customerModalOpen = signal(false);
-  protected readonly orderModalOpen = signal(false);
-  protected readonly editingCustomerId = signal<number | null>(null);
-  protected readonly editingOrderId = signal<number | null>(null);
-  protected readonly customerForm = signal(this.emptyCustomerForm());
-  protected readonly orderForm = signal({ customer_id: 0, box_count: 1 });
+  page = signal<'overview' | 'orders' | 'customers'>('overview');
+  orders = signal<Order[]>([]);
+  customers = signal<Customer[]>([]);
+  loading = signal<boolean>(false);
+  dataLoaded = signal<boolean>(false);
+  saving = signal<boolean>(false);
+  apiConnected = signal<boolean>(true);
+  error = signal<string>('');
+  notice = signal<string>('');
 
-  ngOnInit(): void {
-    this.loadData();
+  today = new Date();
+
+  // Modals state
+  customerModalOpen = signal<boolean>(false);
+  editingCustomerId = signal<number | null>(null);
+  customerForm = signal<any>({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    lat: 16.2443,
+    lng: 103.2504,
+    address_note: ''
+  });
+
+  orderModalOpen = signal<boolean>(false);
+  editingOrderId = signal<number | null>(null);
+  orderForm = signal<any>({
+    customer_id: null,
+    box_count: 1
+  });
+
+  // Computed metrics
+  get todayOrders(): number {
+    return this.orders().length;
   }
 
-  protected get filteredCustomers(): Customer[] {
-    const term = this.query().trim().toLocaleLowerCase();
-    if (!term) return this.customers();
-    return this.customers().filter((customer) =>
-      [customer.first_name, customer.last_name, customer.phone ?? '', customer.address_note ?? '']
-        .join(' ')
-        .toLocaleLowerCase()
-        .includes(term),
-    );
+  get pendingOrders(): number {
+    return this.orders().filter(o => o.status === 'pending').length;
   }
 
-  protected get filteredOrders(): Order[] {
-    const term = this.query().trim().toLocaleLowerCase();
-    if (!term) return this.orders();
-    return this.orders().filter((order) =>
-      [order.order_id, order.first_name, order.last_name, order.phone ?? '', order.status]
-        .join(' ')
-        .toLocaleLowerCase()
-        .includes(term),
-    );
+  get totalBoxes(): number {
+    return this.orders().reduce((sum, o) => sum + (Number(o.box_count) || 0), 0);
   }
 
-  protected get todayOrders(): number {
-    const today = new Date().toDateString();
-    return this.orders().filter((order) => new Date(order.order_date).toDateString() === today)
-      .length;
+  ngOnInit() {
+    this.loadAllData();
   }
 
-  protected get pendingOrders(): number {
-    return this.orders().filter((order) => order.status === 'pending').length;
+  setPage(p: 'overview' | 'orders' | 'customers') {
+    this.page.set(p);
   }
 
-  protected get totalBoxes(): number {
-    return this.orders().reduce((total, order) => total + order.box_count, 0);
-  }
-
-  protected get today(): string {
-    return new Date().toISOString();
-  }
-
-  protected customerOrderCount(customerId: number): number {
-    return this.orders().filter((order) => order.customer_id === customerId).length;
-  }
-
-  protected loadData(): void {
+  loadAllData() {
     this.loading.set(true);
-    this.error.set('');
-    forkJoin({
-      customers: this.api.getCustomers(),
-      orders: this.api.getOrders(),
-    }).subscribe({
-      next: ({ customers, orders }) => {
-        this.customers.set(customers);
-        this.orders.set(orders);
-        this.dataLoaded.set(true);
-        this.apiConnected.set(true);
-        if (this.orderForm().customer_id === 0 && customers.length > 0) {
-          this.orderForm.update((form) => ({
-            ...form,
-            customer_id: customers[0].customer_id,
-          }));
-        }
-        this.loading.set(false);
-      },
-      error: (error: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.showError(error, 'โหลดข้อมูลไม่สำเร็จ');
-      },
-    });
-  }
-
-  protected setPage(page: Page): void {
-    this.page.set(page);
-    this.query.set('');
-    this.notice.set('');
-    this.error.set('');
-  }
-
-  protected openNewCustomer(): void {
-    this.error.set('');
-    this.editingCustomerId.set(null);
-    this.customerForm.set(this.emptyCustomerForm());
-    this.customerModalOpen.set(true);
-  }
-
-  protected editCustomer(customer: Customer): void {
-    this.error.set('');
-    this.editingCustomerId.set(customer.customer_id);
-    this.customerForm.set({
-      first_name: customer.first_name,
-      last_name: customer.last_name,
-      phone: customer.phone ?? '',
-      lat: customer.lat,
-      lng: customer.lng,
-      address_note: customer.address_note ?? '',
-    });
-    this.customerModalOpen.set(true);
-  }
-
-  protected saveCustomer(): void {
-    const form = this.customerForm();
-    if (
-      !form.first_name.trim() ||
-      !form.last_name.trim() ||
-      !Number.isFinite(Number(form.lat)) ||
-      !Number.isFinite(Number(form.lng)) ||
-      Number(form.lat) < -90 ||
-      Number(form.lat) > 90 ||
-      Number(form.lng) < -180 ||
-      Number(form.lng) > 180
-    ) {
-      this.error.set(
-        'กรุณากรอกชื่อ นามสกุล และพิกัดให้ถูกต้อง (ละติจูด -90 ถึง 90, ลองจิจูด -180 ถึง 180)',
-      );
-      return;
-    }
-
-    const payload = {
-      ...form,
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      phone: form.phone.trim() || null,
-      lat: Number(form.lat),
-      lng: Number(form.lng),
-      address_note: form.address_note.trim() || null,
-    };
-    const customerId = this.editingCustomerId();
-    this.saving.set(true);
-    this.error.set('');
-    const request = customerId
-      ? this.api.updateCustomer(customerId, payload)
-      : this.api.createCustomer(payload);
-
-    request.subscribe({
-      next: (customer) => {
-        this.apiConnected.set(true);
-        this.customers.update((items) =>
-          customerId
-            ? items.map((item) => (item.customer_id === customer.customer_id ? customer : item))
-            : [customer, ...items],
-        );
-        this.customerModalOpen.set(false);
-        this.saving.set(false);
-        this.notice.set(customerId ? 'บันทึกการแก้ไขลูกค้าแล้ว' : 'เพิ่มลูกค้าแล้ว');
-      },
-      error: (error: HttpErrorResponse) => {
-        this.saving.set(false);
-        this.showError(error, 'บันทึกข้อมูลลูกค้าไม่สำเร็จ');
-      },
-    });
-  }
-
-  protected deleteCustomer(customer: Customer): void {
-    if (
-      !window.confirm(
-        `ต้องการลบ ${customer.first_name} ${customer.last_name} ใช่หรือไม่? ออร์เดอร์ของลูกค้ารายนี้จะถูกลบด้วย`,
-      )
-    ) {
-      return;
-    }
-    this.api.deleteCustomer(customer.customer_id).subscribe({
-      next: () => {
-        this.apiConnected.set(true);
-        this.customers.update((items) =>
-          items.filter((item) => item.customer_id !== customer.customer_id),
-        );
-        this.orders.update((items) =>
-          items.filter((item) => item.customer_id !== customer.customer_id),
-        );
-        this.notice.set('ลบลูกค้าแล้ว');
-      },
-      error: (error: HttpErrorResponse) => this.showError(error, 'ลบลูกค้าไม่สำเร็จ'),
-    });
-  }
-
-  protected openNewOrder(): void {
-    this.error.set('');
-    this.editingOrderId.set(null);
-    this.orderForm.set({
-      customer_id: this.customers()[0]?.customer_id ?? 0,
-      box_count: 1,
-    });
-    this.orderModalOpen.set(true);
-  }
-
-  protected editOrder(order: Order): void {
-    this.error.set('');
-    this.editingOrderId.set(order.order_id);
-    this.orderForm.set({
-      customer_id: order.customer_id,
-      box_count: order.box_count,
-    });
-    this.orderModalOpen.set(true);
-  }
-
-  protected saveOrder(): void {
-    const form = this.orderForm();
-    if (!form.customer_id || !Number.isInteger(Number(form.box_count))) {
-      this.error.set('กรุณาเลือกลูกค้าและจำนวนกล่อง');
-      return;
-    }
-    const orderId = this.editingOrderId();
-    this.saving.set(true);
-    this.error.set('');
-    const request = orderId
-      ? this.api.updateOrder(orderId, Number(form.box_count))
-      : this.api.createOrder({
-          customer_id: Number(form.customer_id),
-          box_count: Number(form.box_count),
+    this.api.getCustomers().subscribe({
+      next: (custs: any) => { 
+        this.customers.set(custs || []);
+        this.api.getOrders().subscribe({
+          next: (ords: any) => {
+            this.orders.set(ords || []);
+            this.dataLoaded.set(true);
+            this.apiConnected.set(true);
+            this.loading.set(false);
+          },
+          error: (err: any) => {
+            this.apiConnected.set(false);
+            this.loading.set(false);
+          }
         });
-
-    request.subscribe({
-      next: (order) => {
-        this.apiConnected.set(true);
-        this.orders.update((items) =>
-          orderId
-            ? items.map((item) => (item.order_id === order.order_id ? order : item))
-            : [order, ...items],
-        );
-        this.orderModalOpen.set(false);
-        this.saving.set(false);
-        this.notice.set(orderId ? 'อัปเดตออร์เดอร์แล้ว' : 'สร้างออร์เดอร์แล้ว');
       },
-      error: (error: HttpErrorResponse) => {
-        this.saving.set(false);
-        this.showError(error, 'บันทึกออร์เดอร์ไม่สำเร็จ');
-      },
+      error: (err: any) => {
+        this.apiConnected.set(false);
+        this.loading.set(false);
+      }
     });
   }
 
-  protected deleteOrder(order: Order): void {
-    if (!window.confirm(`ต้องการลบออร์เดอร์ #${order.order_id} ใช่หรือไม่?`)) {
-      return;
-    }
-    this.api.deleteOrder(order.order_id).subscribe({
-      next: () => {
-        this.apiConnected.set(true);
-        this.orders.update((items) => items.filter((item) => item.order_id !== order.order_id));
-        this.notice.set('ลบออร์เดอร์แล้ว');
-      },
-      error: (error: HttpErrorResponse) => this.showError(error, 'ลบออร์เดอร์ไม่สำเร็จ'),
-    });
+  formatDate(d: any): string {
+    if (!d) return '—';
+    const date = new Date(d);
+    return isNaN(date.getTime()) ? String(d) : date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  protected simulateOrders(): void {
-    if (!this.customers().length) {
-      this.error.set('เพิ่มลูกค้าก่อนจึงจะจำลองออร์เดอร์ได้');
-      return;
-    }
-    this.saving.set(true);
-    this.api.simulateOrders(20).subscribe({
-      next: (result) => {
-        this.apiConnected.set(true);
-        this.orders.update((items) => [...result.orders, ...items]);
-        this.saving.set(false);
-        this.notice.set(`สร้างออร์เดอร์จำลอง ${result.count} รายการแล้ว`);
-      },
-      error: (error: HttpErrorResponse) => {
-        this.saving.set(false);
-        this.showError(error, 'จำลองออร์เดอร์ไม่สำเร็จ');
-      },
-    });
-  }
-
-  protected clearOrders(): void {
-    if (!this.orders().length || !window.confirm('ต้องการลบออร์เดอร์ทั้งหมดในระบบใช่หรือไม่?')) {
-      return;
-    }
-    this.api.clearOrders().subscribe({
-      next: () => {
-        this.apiConnected.set(true);
-        this.orders.set([]);
-        this.notice.set('ล้างออร์เดอร์ทั้งหมดแล้ว');
-      },
-      error: (error: HttpErrorResponse) => this.showError(error, 'ล้างออร์เดอร์ไม่สำเร็จ'),
-    });
-  }
-
-  protected customerName(order: Order): string {
-    return `${order.first_name} ${order.last_name}`;
-  }
-
-  protected formatDate(date: string): string {
-    return new Intl.DateTimeFormat('th-TH', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(date));
-  }
-
-  protected formatTime(date: string): string {
-    return new Intl.DateTimeFormat('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
-  }
-
-  protected updateCustomerForm(
-    key: 'first_name' | 'last_name' | 'phone' | 'lat' | 'lng' | 'address_note',
-    value: string | number,
-  ): void {
-    this.customerForm.update((form) => ({ ...form, [key]: value }));
-  }
-
-  protected updateOrderForm(key: 'customer_id' | 'box_count', value: number): void {
-    this.orderForm.update((form) => ({ ...form, [key]: value }));
-  }
-
-  private emptyCustomerForm() {
-    return {
+  // Customer Management
+  openNewCustomer() {
+    this.editingCustomerId.set(null);
+    this.customerForm.set({
       first_name: '',
       last_name: '',
       phone: '',
-      lat: '' as string | number,
-      lng: '' as string | number,
-      address_note: '',
-    };
+      lat: 16.2443,
+      lng: 103.2504,
+      address_note: ''
+    });
+    this.customerModalOpen.set(true);
   }
 
-  private showError(error: HttpErrorResponse, fallback: string): void {
-    this.apiConnected.set(false);
-    this.error.set(
-      error.error?.error ??
-        (error.status === 0 || error.status === 502 || error.status === 503
-          ? 'เชื่อมต่อ API ไม่ได้ โปรดตรวจสอบว่าเซิร์ฟเวอร์กำลังทำงาน'
-          : fallback),
-    );
+  editCustomer(c: Customer) {
+    this.editingCustomerId.set(c.customer_id);
+    this.customerForm.set({ ...c });
+    this.customerModalOpen.set(true);
+  }
+
+  updateCustomerForm(key: string, val: any) {
+    this.customerForm.update(f => ({ ...f, [key]: val }));
+  }
+
+  saveCustomer() {
+    this.saving.set(true);
+    const form = this.customerForm();
+    const id = this.editingCustomerId();
+
+    const request$ = id
+      ? this.api.updateCustomer(id, form)
+      : this.api.createCustomer(form);
+
+    request$.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.customerModalOpen.set(false);
+        this.notice.set(id ? 'อัปเดตข้อมูลลูกค้าสำเร็จ' : 'เพิ่มลูกค้าเรียบร้อยแล้ว');
+        this.loadAllData();
+      },
+      error: (err: any) => {
+        this.saving.set(false);
+        this.error.set(err.message || 'บันทึกข้อมูลลูกค้าไม่สำเร็จ');
+      }
+    });
+  }
+
+  deleteCustomer(c: Customer) {
+    if (!confirm(`ต้องการลบลูกค้า "${c.first_name} ${c.last_name}" ใช่หรือไม่?`)) return;
+    this.api.deleteCustomer(c.customer_id).subscribe({
+      next: () => {
+        this.notice.set('ลบข้อมูลลูกค้าเรียบร้อยแล้ว');
+        this.loadAllData();
+      },
+      error: (err: any) => this.error.set(err.message || 'ลบข้อมูลไม่สำเร็จ')
+    });
+  }
+
+  // Order Management
+  openNewOrder() {
+    if (!this.customers().length) {
+      this.error.set('กรุณาเพิ่มลูกค้าก่อนสร้างออร์เดอร์');
+      return;
+    }
+    this.editingOrderId.set(null);
+    this.orderForm.set({
+      customer_id: this.customers()[0].customer_id,
+      box_count: 1
+    });
+    this.orderModalOpen.set(true);
+  }
+
+  editOrder(o: Order) {
+    this.editingOrderId.set(o.order_id);
+    this.orderForm.set({
+      customer_id: o.customer_id,
+      box_count: o.box_count
+    });
+    this.orderModalOpen.set(true);
+  }
+
+  updateOrderForm(key: string, val: any) {
+    this.orderForm.update(f => ({ ...f, [key]: val }));
+  }
+
+  saveOrder() {
+    this.saving.set(true);
+    const form = this.orderForm();
+    const id = this.editingOrderId();
+
+    const request$ = id
+      ? this.api.updateOrder(id, form)
+      : this.api.createOrder(form);
+
+    request$.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.orderModalOpen.set(false);
+        this.notice.set(id ? 'แก้ไขออร์เดอร์สำเร็จ' : 'สร้างออร์เดอร์เรียบร้อยแล้ว');
+        this.loadAllData();
+      },
+      error: (err: any) => {
+        this.saving.set(false);
+        this.error.set(err.message || 'บันทึกออร์เดอร์ไม่สำเร็จ');
+      }
+    });
+  }
+
+  deleteOrder(o: Order) {
+    if (!confirm(`ต้องการลบออร์เดอร์ #${o.order_id} ใช่หรือไม่?`)) return;
+    this.api.deleteOrder(o.order_id).subscribe({
+      next: () => {
+        this.notice.set('ลบออร์เดอร์เรียบร้อยแล้ว');
+        this.loadAllData();
+      },
+      error: (err: any) => this.error.set(err.message || 'ลบออร์เดอร์ไม่สำเร็จ')
+    });
+  }
+
+  simulateOrders() {
+    if (!this.customers().length) return;
+    this.saving.set(true);
+    const randomCustomer = this.customers()[Math.floor(Math.random() * this.customers().length)];
+    const randomBoxes = Math.floor(Math.random() * 3) + 1;
+
+    this.api.createOrder({
+      customer_id: randomCustomer.customer_id,
+      box_count: randomBoxes
+    }).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.notice.set('สร้างออร์เดอร์ตัวอย่างเรียบร้อยแล้ว');
+        this.loadAllData();
+      },
+      error: (err: any) => {
+        this.saving.set(false);
+        this.error.set(err.message || 'สร้างออร์เดอร์ตัวอย่างไม่สำเร็จ');
+      }
+    });
+  }
+
+  clearOrders() {
+    if (!confirm('ยืนยันที่จะลบออร์เดอร์ทั้งหมดในระบบ?')) return;
+    this.api.clearOrders().subscribe({
+      next: () => {
+        this.notice.set('ล้างออร์เดอร์ทั้งหมดเรียบร้อยแล้ว');
+        this.loadAllData();
+      },
+      error: (err: any) => this.error.set(err.message || 'ไม่สามารถล้างออร์เดอร์ได้')
+    });
   }
 }

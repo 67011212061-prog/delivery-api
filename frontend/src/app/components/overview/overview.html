@@ -1,0 +1,124 @@
+<div class="flex items-end justify-between mb-6">
+  <div>
+    <div class="text-[11px] font-bold text-[#a85d41] uppercase tracking-wider mb-1">สรุปงานประจำวัน</div>
+    <h2 class="text-2xl font-bold m-0 text-[#242820]">ภาพรวมการจัดส่ง</h2>
+    <p class="text-xs text-[#85877d] mt-1 mb-0">ดูสถานะออร์เดอร์และข้อมูลผู้รับได้จากหน้านี้</p>
+  </div>
+  <button (click)="createOrder.emit()" class="px-4 py-2 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition cursor-pointer border-0">
+    <span class="text-base leading-none">+</span> สร้างออร์เดอร์
+  </button>
+</div>
+
+<!-- 4 Stats Cards -->
+<div class="grid grid-cols-4 gap-4 mb-6">
+  <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
+    <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
+      <span>ออร์เดอร์ทั้งหมด</span>
+      <svg class="w-4 h-4 stroke-sky-600 fill-none stroke-2" viewBox="0 0 24 24"><path d="M7 3.75h10a2 2 0 0 1 2 2v14.5H5V5.75a2 2 0 0 1 2-2Z"/><path d="M9 8h6m-6 4h6m-6 4h4"/></svg>
+    </div>
+    <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? orders().length : '—' }}</div>
+    <div class="text-[11px] text-[#929389] mt-1">วันนี้ {{ todayOrders() }} รายการ</div>
+  </div>
+
+  <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
+    <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
+      <span>รอดำเนินการ</span>
+      <svg class="w-4 h-4 stroke-amber-600 fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.25"/><path d="M12 7v5l3 2"/></svg>
+    </div>
+    <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? pendingOrders() : '—' }}</div>
+    <div class="text-[11px] text-[#929389] mt-1">ออร์เดอร์ที่ยังไม่จัดส่ง</div>
+  </div>
+
+  <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
+    <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
+      <span>ลูกค้าทั้งหมด</span>
+      <svg class="w-4 h-4 stroke-emerald-600 fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+    </div>
+    <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? customers().length : '—' }}</div>
+    <div class="text-[11px] text-[#929389] mt-1">รายชื่อในระบบ</div>
+  </div>
+
+  <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
+    <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
+      <span>กล่องที่ต้องส่ง</span>
+      <svg class="w-4 h-4 stroke-purple-600 fill-none stroke-2" viewBox="0 0 24 24"><path d="m3 7 9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7m-9 4v10"/></svg>
+    </div>
+    <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? totalBoxes() : '—' }}</div>
+    <div class="text-[11px] text-[#929389] mt-1">รวมทุกออร์เดอร์</div>
+  </div>
+</div>
+
+<!-- Orders Table -->
+<div class="bg-white border border-[#e6e4dc] rounded-lg overflow-hidden mb-6">
+  <div class="p-4 border-b border-[#eceae3] flex justify-between items-center">
+    <div>
+      <h3 class="text-sm font-bold text-[#30342c] m-0">ออร์เดอร์ล่าสุด</h3>
+      <p class="text-xs text-[#929389] m-0 mt-0.5">รายการสั่งซื้อล่าสุดที่เข้ามา</p>
+    </div>
+    <button (click)="goToOrders.emit()" class="text-xs text-[#466553] font-semibold hover:underline bg-transparent border-0 cursor-pointer">
+      ดูออร์เดอร์ทั้งหมด →
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="p-12 text-center text-xs text-[#85877d]">กำลังโหลดข้อมูล...</div>
+  } @else if (orders().length === 0) {
+    <div class="p-12 text-center text-xs text-[#85877d]">ยังไม่มีออร์เดอร์ในระบบ</div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-[#f8f7f1] text-[#85877d] border-b border-[#eeece5]">
+            <th class="p-3 font-semibold">ออร์เดอร์</th>
+            <th class="p-3 font-semibold">ลูกค้า</th>
+            <th class="p-3 font-semibold">วันที่สั่งซื้อ</th>
+            <th class="p-3 font-semibold">จำนวน</th>
+            <th class="p-3 font-semibold">สถานะ</th>
+            <th class="p-3 font-semibold"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#eeece5]">
+          @for (order of orders().slice(0, 5); track order.order_id) {
+            <tr class="hover:bg-[#fbfaf6]">
+              <td class="p-3 font-bold text-[#4b5147]">#{{ order.order_id }}</td>
+              <td class="p-3">
+                <div class="font-semibold text-[#373c33]">{{ customerName(order) }}</div>
+                <div class="text-[11px] text-[#96978d]">{{ order.phone || 'ไม่ระบุเบอร์โทร' }}</div>
+              </td>
+              <td class="p-3">
+                {{ formatDate(order.order_date) }}
+                <span class="text-[11px] text-[#96978d] ml-1">{{ formatTime(order.order_date) }}</span>
+              </td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded bg-[#f0efe9] text-[11px]">{{ order.box_count }} กล่อง</span></td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded text-[11px] font-semibold"
+                  [ngClass]="order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
+                  {{ order.status === 'pending' ? 'รอดำเนินการ' : order.status }}
+                </span>
+              </td>
+              <td class="p-3 text-right">
+                <button class="px-2 py-1 border border-stone-200 rounded hover:bg-stone-100 cursor-pointer text-xs" (click)="editOrderAction.emit(order)">···</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<div class="bg-[#e9ece4] border border-[#dfe3d9] rounded-lg p-4 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-8 h-8 rounded bg-[#dce4d9] text-[#42624c] flex items-center justify-center">
+      <svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M12 3v18m-9-9h18"/></svg>
+    </div>
+    <div>
+      <strong class="block text-xs text-[#3c443a]">ทำรายการต่อ</strong>
+      <small class="text-[11px] text-[#7e8378]">สร้างออร์เดอร์ใหม่ หรือเพิ่มผู้รับสำหรับการจัดส่ง</small>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <button class="px-3 py-1.5 border border-[#dcdad1] bg-transparent text-[#4d554b] text-xs font-semibold rounded hover:bg-[#f0efe8] cursor-pointer" [disabled]="saving()" (click)="simulate.emit()">สร้างออร์เดอร์ตัวอย่าง</button>
+    <button class="px-3 py-1.5 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded cursor-pointer border-0" (click)="createCustomer.emit()">เพิ่มลูกค้า</button>
+  </div>
+</div>

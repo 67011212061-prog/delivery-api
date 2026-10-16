@@ -72,9 +72,8 @@
     </div>
   </aside>
 
-  <!-- Main Content Area -->
+  <!-- Main Area -->
   <main class="ml-64 min-h-screen">
-    <!-- Topbar -->
     <header class="h-14 border-b border-[#e6e4dc] bg-[#fffefa]/90 sticky top-0 px-8 flex items-center justify-between z-10 backdrop-blur">
       <div class="text-xs text-[#9a9b91] flex items-center gap-2">
         <span>ระบบจัดส่ง</span>
@@ -118,286 +117,51 @@
         </div>
       }
 
-      <!-- Page 1: OVERVIEW -->
+      <!-- สลับหน้าแบบเรียกใช้ Component ย่อย -->
       @if (page() === 'overview') {
-        <div class="flex items-end justify-between mb-6">
-          <div>
-            <div class="text-[11px] font-bold text-[#a85d41] uppercase tracking-wider mb-1">สรุปงานประจำวัน</div>
-            <h2 class="text-2xl font-bold m-0 text-[#242820]">ภาพรวมการจัดส่ง</h2>
-            <p class="text-xs text-[#85877d] mt-1 mb-0">ดูสถานะออร์เดอร์และข้อมูลผู้รับได้จากหน้านี้</p>
-          </div>
-          <button (click)="openNewOrder()" class="px-4 py-2 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition cursor-pointer border-0">
-            <span class="text-base leading-none">+</span> สร้างออร์เดอร์
-          </button>
-        </div>
-
-        <div class="grid grid-cols-4 gap-4 mb-6">
-          <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
-            <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
-              <span>ออร์เดอร์ทั้งหมด</span>
-              <svg class="w-4 h-4 stroke-sky-600 fill-none stroke-2" viewBox="0 0 24 24"><path d="M7 3.75h10a2 2 0 0 1 2 2v14.5H5V5.75a2 2 0 0 1 2-2Z"/><path d="M9 8h6m-6 4h6m-6 4h4"/></svg>
-            </div>
-            <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? orders().length : '—' }}</div>
-            <div class="text-[11px] text-[#929389] mt-1">วันนี้ {{ todayOrders }} รายการ</div>
-          </div>
-
-          <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
-            <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
-              <span>รอดำเนินการ</span>
-              <svg class="w-4 h-4 stroke-amber-600 fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.25"/><path d="M12 7v5l3 2"/></svg>
-            </div>
-            <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? pendingOrders : '—' }}</div>
-            <div class="text-[11px] text-[#929389] mt-1">ออร์เดอร์ที่ยังไม่จัดส่ง</div>
-          </div>
-
-          <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
-            <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
-              <span>ลูกค้าทั้งหมด</span>
-              <svg class="w-4 h-4 stroke-emerald-600 fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
-            </div>
-            <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? customers().length : '—' }}</div>
-            <div class="text-[11px] text-[#929389] mt-1">รายชื่อในระบบ</div>
-          </div>
-
-          <div class="bg-white border border-[#e6e4dc] rounded-lg p-4">
-            <div class="flex justify-between text-xs text-[#72756a] mb-2 font-medium">
-              <span>กล่องที่ต้องส่ง</span>
-              <svg class="w-4 h-4 stroke-purple-600 fill-none stroke-2" viewBox="0 0 24 24"><path d="m3 7 9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7m-9 4v10"/></svg>
-            </div>
-            <div class="text-2xl font-bold text-[#242820]">{{ dataLoaded() ? totalBoxes : '—' }}</div>
-            <div class="text-[11px] text-[#929389] mt-1">รวมทุกออร์เดอร์</div>
-          </div>
-        </div>
-
-        <div class="bg-white border border-[#e6e4dc] rounded-lg overflow-hidden mb-6">
-          <div class="p-4 border-b border-[#eceae3] flex justify-between items-center">
-            <div>
-              <h3 class="text-sm font-bold text-[#30342c] m-0">ออร์เดอร์ล่าสุด</h3>
-              <p class="text-xs text-[#929389] m-0 mt-0.5">รายการสั่งซื้อล่าสุดที่เข้ามา</p>
-            </div>
-            <button (click)="setPage('orders')" class="text-xs text-[#466553] font-semibold hover:underline bg-transparent border-0 cursor-pointer">
-              ดูออร์เดอร์ทั้งหมด →
-            </button>
-          </div>
-
-          @if (loading()) {
-            <div class="p-12 text-center text-xs text-[#85877d]">กำลังโหลดข้อมูล...</div>
-          } @else if (orders().length === 0) {
-            <div class="p-12 text-center text-xs text-[#85877d]">ยังไม่มีออร์เดอร์ในระบบ</div>
-          } @else {
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="bg-[#f8f7f1] text-[#85877d] border-b border-[#eeece5]">
-                    <th class="p-3 font-semibold">ออร์เดอร์</th>
-                    <th class="p-3 font-semibold">ลูกค้า</th>
-                    <th class="p-3 font-semibold">วันที่สั่งซื้อ</th>
-                    <th class="p-3 font-semibold">จำนวน</th>
-                    <th class="p-3 font-semibold">สถานะ</th>
-                    <th class="p-3 font-semibold"></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[#eeece5]">
-                  @for (order of orders().slice(0, 5); track order.order_id) {
-                    <tr class="hover:bg-[#fbfaf6]">
-                      <td class="p-3 font-bold text-[#4b5147]">#{{ order.order_id }}</td>
-                      <td class="p-3">
-                        <div class="font-semibold text-[#373c33]">{{ customerName(order) }}</div>
-                        <div class="text-[11px] text-[#96978d]">{{ order.phone || 'ไม่ระบุเบอร์โทร' }}</div>
-                      </td>
-                      <td class="p-3">
-                        {{ formatDate(order.order_date) }}
-                        <span class="text-[11px] text-[#96978d] ml-1">{{ formatTime(order.order_date) }}</span>
-                      </td>
-                      <td class="p-3"><span class="px-2 py-0.5 rounded bg-[#f0efe9] text-[11px]">{{ order.box_count }} กล่อง</span></td>
-                      <td class="p-3">
-                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold"
-                          [ngClass]="order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
-                          {{ order.status === 'pending' ? 'รอดำเนินการ' : order.status }}
-                        </span>
-                      </td>
-                      <td class="p-3 text-right">
-                        <button class="px-2 py-1 border border-stone-200 rounded hover:bg-stone-100 cursor-pointer text-xs" (click)="editOrder(order)">···</button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </div>
-
-        <div class="bg-[#e9ece4] border border-[#dfe3d9] rounded-lg p-4 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded bg-[#dce4d9] text-[#42624c] flex items-center justify-center">
-              <svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M12 3v18m-9-9h18"/></svg>
-            </div>
-            <div>
-              <strong class="block text-xs text-[#3c443a]">ทำรายการต่อ</strong>
-              <small class="text-[11px] text-[#7e8378]">สร้างออร์เดอร์ใหม่ หรือเพิ่มผู้รับสำหรับการจัดส่ง</small>
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <button class="px-3 py-1.5 border border-[#dcdad1] bg-transparent text-[#4d554b] text-xs font-semibold rounded hover:bg-[#f0efe8] cursor-pointer" [disabled]="saving()" (click)="simulateOrders()">สร้างออร์เดอร์ตัวอย่าง</button>
-            <button class="px-3 py-1.5 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded cursor-pointer border-0" (click)="openNewCustomer()">เพิ่มลูกค้า</button>
-          </div>
-        </div>
+        <app-overview 
+          [orders]="orders()" 
+          [customers]="customers()"
+          [loading]="loading()"
+          [dataLoaded]="dataLoaded()"
+          [todayOrders]="todayOrders"
+          [pendingOrders]="pendingOrders"
+          [totalBoxes]="totalBoxes"
+          [saving]="saving()"
+          (createOrder)="openNewOrder()"
+          (goToOrders)="setPage('orders')"
+          (simulate)="simulateOrders()"
+          (createCustomer)="openNewCustomer()"
+          (editOrderAction)="editOrder($event)" />
       }
 
-      <!-- Page 2: ORDERS -->
       @if (page() === 'orders') {
-        <div class="flex items-end justify-between mb-6">
-          <div>
-            <p class="text-[11px] font-bold text-[#a85d41] uppercase tracking-wider mb-1">รายการทั้งหมด</p>
-            <h1 class="text-2xl font-bold m-0 text-[#242820]">จัดการออร์เดอร์</h1>
-            <p class="text-xs text-[#85877d] mt-1 mb-0">ติดตามและจัดการคำสั่งซื้อของลูกค้า</p>
-          </div>
-          <div class="flex gap-2">
-            <button class="px-3 py-1.5 border border-[#dcdad1] bg-white text-[#4d554b] text-xs font-semibold rounded hover:bg-[#f0efe8] cursor-pointer" [disabled]="saving() || !customers().length" (click)="simulateOrders()">
-              ✦ สร้างตัวอย่าง
-            </button>
-            <button class="px-4 py-2 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer border-0" [disabled]="!customers().length" (click)="openNewOrder()">
-              <span class="text-base leading-none">+</span> สร้างออร์เดอร์
-            </button>
-          </div>
-        </div>
-
-        <section class="bg-white border border-[#e6e4dc] rounded-lg overflow-hidden">
-          <div class="p-3 border-b border-[#eceae3] flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <strong class="text-xs text-[#3c4138]">ออร์เดอร์ทั้งหมด</strong>
-              <span class="bg-[#f0efe9] text-[#77796f] text-[10px] px-2 py-0.5 rounded">{{ filteredOrders.length }} รายการ</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="flex items-center border border-[#e3e1d8] rounded px-2.5 py-1 bg-white">
-                <span class="text-xs text-stone-400 mr-2">⌕</span>
-                <input type="search" placeholder="ค้นหาออร์เดอร์หรือลูกค้า..." class="text-xs border-0 outline-none w-48" [value]="query()" (input)="query.set($any($event.target).value)" />
-              </div>
-              <button class="px-3 py-1 border border-red-200 text-red-600 rounded text-xs hover:bg-red-50 cursor-pointer bg-transparent" [disabled]="!orders().length" (click)="clearOrders()">ล้างทั้งหมด</button>
-            </div>
-          </div>
-
-          @if (loading()) {
-            <div class="p-12 text-center text-xs text-[#85877d]">กำลังโหลดข้อมูล...</div>
-          } @else if (filteredOrders.length === 0) {
-            <div class="p-12 text-center text-xs text-[#85877d]">{{ query() ? 'ไม่พบออร์เดอร์ที่ค้นหา' : 'ยังไม่มีออร์เดอร์ในระบบ' }}</div>
-          } @else {
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="bg-[#f8f7f1] text-[#85877d] border-b border-[#eeece5]">
-                    <th class="p-3 font-semibold">ออร์เดอร์</th>
-                    <th class="p-3 font-semibold">ลูกค้า</th>
-                    <th class="p-3 font-semibold">วันที่สั่งซื้อ</th>
-                    <th class="p-3 font-semibold">กำหนดส่ง</th>
-                    <th class="p-3 font-semibold">จำนวน</th>
-                    <th class="p-3 font-semibold">สถานะ</th>
-                    <th class="p-3 font-semibold text-right">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[#eeece5]">
-                  @for (order of filteredOrders; track order.order_id) {
-                    <tr class="hover:bg-[#fbfaf6]">
-                      <td class="p-3 font-bold text-[#4b5147]">#{{ order.order_id }}</td>
-                      <td class="p-3">
-                        <div class="font-semibold text-[#373c33]">{{ customerName(order) }}</div>
-                        <div class="text-[11px] text-[#96978d]">{{ order.phone || 'ไม่ระบุเบอร์โทร' }}</div>
-                      </td>
-                      <td class="p-3">
-                        {{ formatDate(order.order_date) }}
-                        <span class="text-[11px] text-[#96978d] ml-1">{{ formatTime(order.order_date) }}</span>
-                      </td>
-                      <td class="p-3">{{ order.deadline?.slice(0, 5) || '12:30' }} น.</td>
-                      <td class="p-3"><span class="px-2 py-0.5 rounded bg-[#f0efe9] text-[11px]">{{ order.box_count }} กล่อง</span></td>
-                      <td class="p-3">
-                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold"
-                          [ngClass]="order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
-                          {{ order.status === 'pending' ? 'รอดำเนินการ' : order.status }}
-                        </span>
-                      </td>
-                      <td class="p-3 text-right">
-                        <button class="px-2 py-1 border border-stone-200 rounded hover:bg-stone-100 cursor-pointer mr-1" (click)="editOrder(order)">✎</button>
-                        <button class="px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50 cursor-pointer" (click)="deleteOrder(order)">×</button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </section>
+        <app-orders 
+          [orders]="orders()" 
+          [customers]="customers()"
+          [loading]="loading()"
+          [saving]="saving()"
+          (createOrder)="openNewOrder()"
+          (simulate)="simulateOrders()"
+          (clear)="clearOrders()"
+          (onEdit)="editOrder($event)"
+          (onDelete)="deleteOrder($event)" />
       }
 
-      <!-- Page 3: CUSTOMERS -->
       @if (page() === 'customers') {
-        <div class="flex items-end justify-between mb-6">
-          <div>
-            <p class="text-[11px] font-bold text-[#a85d41] uppercase tracking-wider mb-1">สมุดรายชื่อ</p>
-            <h1 class="text-2xl font-bold m-0 text-[#242820]">จัดการลูกค้า</h1>
-            <p class="text-xs text-[#85877d] mt-1 mb-0">ดูแลข้อมูลลูกค้าและตำแหน่งสำหรับจัดส่ง</p>
-          </div>
-          <button (click)="openNewCustomer()" class="px-4 py-2 bg-[#31594b] hover:bg-[#254638] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer border-0">
-            <span class="text-base leading-none">+</span> เพิ่มลูกค้า
-          </button>
-        </div>
-
-        <section class="bg-white border border-[#e6e4dc] rounded-lg overflow-hidden">
-          <div class="p-3 border-b border-[#eceae3] flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <strong class="text-xs text-[#3c4138]">ลูกค้าทั้งหมด</strong>
-              <span class="bg-[#f0efe9] text-[#77796f] text-[10px] px-2 py-0.5 rounded">{{ filteredCustomers.length }} ราย</span>
-            </div>
-            <div class="flex items-center border border-[#e3e1d8] rounded px-2.5 py-1 bg-white">
-              <span class="text-xs text-stone-400 mr-2">⌕</span>
-              <input type="search" placeholder="ค้นหาชื่อ เบอร์โทร หรือที่อยู่..." class="text-xs border-0 outline-none w-56" [value]="query()" (input)="query.set($any($event.target).value)" />
-            </div>
-          </div>
-
-          @if (loading()) {
-            <div class="p-12 text-center text-xs text-[#85877d]">กำลังโหลดข้อมูล...</div>
-          } @else if (filteredCustomers.length === 0) {
-            <div class="p-12 text-center text-xs text-[#85877d]">{{ query() ? 'ไม่พบลูกค้าที่ค้นหา' : 'ยังไม่มีข้อมูลลูกค้า' }}</div>
-          } @else {
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="bg-[#f8f7f1] text-[#85877d] border-b border-[#eeece5]">
-                    <th class="p-3 font-semibold">ชื่อลูกค้า</th>
-                    <th class="p-3 font-semibold">เบอร์โทรศัพท์</th>
-                    <th class="p-3 font-semibold">ที่อยู่ / หมายเหตุ</th>
-                    <th class="p-3 font-semibold">พิกัดจัดส่ง</th>
-                    <th class="p-3 font-semibold">ออร์เดอร์</th>
-                    <th class="p-3 font-semibold text-right">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[#eeece5]">
-                  @for (customer of filteredCustomers; track customer.customer_id) {
-                    <tr class="hover:bg-[#fbfaf6]">
-                      <td class="p-3">
-                        <div class="font-semibold text-[#373c33]">{{ customer.first_name }} {{ customer.last_name }}</div>
-                        <div class="text-[11px] text-[#96978d]">รหัสลูกค้า #{{ customer.customer_id }}</div>
-                      </td>
-                      <td class="p-3">{{ customer.phone || '—' }}</td>
-                      <td class="p-3 max-w-xs truncate">{{ customer.address_note || 'ไม่ระบุที่อยู่' }}</td>
-                      <td class="p-3 text-[#72776c] font-mono text-[11px]">{{ customer.lat }}, {{ customer.lng }}</td>
-                      <td class="p-3"><span class="px-2 py-0.5 rounded bg-[#f0efe9] text-[11px]">{{ customerOrderCount(customer.customer_id) }} รายการ</span></td>
-                      <td class="p-3 text-right">
-                        <button class="px-2 py-1 border border-stone-200 rounded hover:bg-stone-100 cursor-pointer mr-1" (click)="editCustomer(customer)">✎</button>
-                        <button class="px-2 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50 cursor-pointer" (click)="deleteCustomer(customer)">×</button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </section>
+        <app-customers 
+          [customers]="customers()" 
+          [orders]="orders()"
+          [loading]="loading()"
+          (createCustomer)="openNewCustomer()"
+          (onEdit)="editCustomer($event)"
+          (onDelete)="deleteCustomer($event)" />
       }
     </section>
   </main>
 </div>
 
-<!-- Modal: Customer Form -->
+<!-- Modal: เพิ่ม/แก้ไข ลูกค้า -->
 @if (customerModalOpen()) {
   <div class="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
     <div class="bg-white border border-[#e6e2d7] rounded-lg shadow-xl max-w-lg w-full p-6" (click)="$event.stopPropagation()">
@@ -444,7 +208,7 @@
   </div>
 }
 
-<!-- Modal: Order Form -->
+<!-- Modal: เพิ่ม/แก้ไข ออร์เดอร์ -->
 @if (orderModalOpen()) {
   <div class="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
     <div class="bg-white border border-[#e6e2d7] rounded-lg shadow-xl max-w-sm w-full p-6" (click)="$event.stopPropagation()">
