@@ -252,7 +252,7 @@ app.get('/orders/nearby', async (req, res) => {
 // 2.1 แสดงออร์เดอร์ทั้งหมด (พร้อมข้อมูลลูกค้า)
 app.get('/orders', async (req, res) => {
   try {
-    const [rows] = await pool.query(ORDER_SELECT + ' ORDER BY o.order_id');
+    const [rows] = await pool.query(ORDER_SELECT + ' ORDER BY o.order_id DESC');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
